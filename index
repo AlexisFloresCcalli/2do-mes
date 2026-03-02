@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Para Kumyko, con Amor - 01/02/2026</title>
+    
+    <link href='https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.css' rel='stylesheet' />
+    <script src='https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.js'></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;600&family=Playfair+Display:ital,wght@0,400;1,700&display=swap" rel="stylesheet">
+
+    <style>
+        #letter-content::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            border-radius: 24px;
+            pointer-events: none;
+            opacity: 0.13;
+            background-image: repeating-linear-gradient(135deg, #b6d0f7 0 2px, transparent 2px 24px);
+            z-index: 1;
+        }
+        #hilo-texto {
+            position: absolute;
+            top: 12vh;
+            width: 100%;
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 2.1rem;
+            color: #ff4d5a;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 12px #e63946cc;
+            opacity: 0;
+            z-index: 12;
+            pointer-events: none;
+            transition: opacity 1.2s;
+        }
+        .hilo-brillante {
+            filter: drop-shadow(0 0 12px #ff4d5a) drop-shadow(0 0 24px #ff4d5a);
+            animation: hiloPulse 1.2s infinite alternate;
+        }
+        @keyframes hiloPulse {
+            0% { filter: drop-shadow(0 0 8px #ff4d5a) drop-shadow(0 0 16px #ff4d5a); }
+            100% { filter: drop-shadow(0 0 24px #ff4d5a) drop-shadow(0 0 36px #ff4d5a); }
+        }
+        #letter-scene.fade-in {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1);
+            z-index: 10;
+            transition: all 2.2s cubic-bezier(.68,-0.55,.27,1.55);
+        }
+        @media (max-width: 600px) {
+            #letter-content {
+                width: 98%;
+                font-size: 0.98rem;
+            }
+            .anniversary-graphic {
+                font-size: 3.2rem;
+            }
+            .letter-signature {
+                font-size: 1.05rem;
+            }
+            #instruction-tier {
+                font-size: 0.95rem;
+            }
+        }
+        :root {
+            --bg-dark: #050509;
+            --bg-letter: #fdfdfc;
+            --red-thread: #e63946;
+            --text-light: #ece0d1;
+            --text-dark: #1a1a1a;
+            --transition-speed: 1.5s;
+        }
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden;
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-dark);
+            transition: background-color var(--transition-speed) ease;
+        }
+        #map {
+            position: absolute; top: 0; bottom: 0; width: 100%;
+            opacity: 1;
+            transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease;
+            z-index: 1;
+        }
+        #map-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(0,0,0,0) 0%, rgba(5,5,9,0.8) 100%);
+            pointer-events: none;
+            z-index: 2;
+        }
+        .mapboxgl-marker {
+            cursor: pointer;
+        }
+        .marker-pulse {
+            width: 18px;
+            height: 18px;
+            background-color: #fff;
+            border: 2px solid #e63946;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #e63946cc, 0 0 4px #fff;
+            animation: markerBounceIn 0.8s cubic-bezier(.68,-0.55,.27,1.55) 1, pulseMarker 2s infinite 0.8s;
+            opacity: 0;
+            animation-fill-mode: forwards;
+            z-index: 12;
+            position: relative;
+            left: -9px;
+            top: -9px;
+        }
+        @keyframes markerBounceIn {
+            0% { transform: scale(0.2) translateY(-60px); opacity: 0; }
+            60% { transform: scale(1.2) translateY(10px); opacity: 1; }
+            80% { transform: scale(0.95) translateY(-4px); }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        #instruction-tier {
+            position: absolute; bottom: 8vh; width: 100%;
+            text-align: center;
+            color: #fff;
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 1.25rem;
+            letter-spacing: 1px;
+            z-index: 20;
+            pointer-events: auto;
+            opacity: 0;
+            animation: instructionFadeIn 1.2s cubic-bezier(.68,-0.55,.27,1.55) 2.2s forwards;
+        }
+        @keyframes instructionFadeIn {
+            0% { opacity: 0; transform: scale(0.8) translateY(30px); }
+            70% { opacity: 1; transform: scale(1.08) translateY(-6px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        #letter-scene {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(1.05);
+            transition: all var(--transition-speed) ease;
+            z-index: 0;
+            background:
+                radial-gradient(ellipse at 60% 30%, #b6d0f7 0%, #6ea8e6 40%, #1a237e 100%),
+                repeating-linear-gradient(135deg, #b6d0f7 0 2px, transparent 2px 32px);
+        }
+        #letter-content {
+            position: relative;
+            width: 85%; max-width: 650px;
+            text-align: center;
+            color: var(--text-dark);
+            z-index: 5;
+            background: rgba(255,255,255,0.92);
+            border-radius: 24px;
+            box-shadow: 0 8px 40px 0 rgba(70,120,200,0.18), 0 1.5px 8px 0 rgba(70,120,200,0.10), 0 0 0 2px #e3f0ff;
+            padding: 38px 18px 32px 18px;
+            overflow: hidden;
+        }
+        .anniversary-graphic {
+            font-family: 'Playfair Display', serif;
+            font-size: 6rem;
+            color: var(--red-thread);
+            margin: 0; line-height: 1;
+        }
+        .anniversary-sub {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 300;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-size: 0.9rem;
+            margin-top: -10px;
+            margin-bottom: 40px;
+        }
+        .letter-text p {
+            font-size: 1.15rem;
+            line-height: 1.9;
+            margin-bottom: 25px;
+            font-weight: 300;
+        }
+        .letter-signature {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 1.3rem;
+            margin-top: 50px;
+        }
+        body.illuminated { background-color: var(--bg-letter); }
+        #map.fade-out { opacity: 0; transform: scale(0.9); z-index: 0; }
+        #letter-scene.fade-in { opacity: 1; pointer-events: auto; transform: scale(1); z-index: 10; }
+        @keyframes pulseMarker {
+            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(255, 255, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
+        @keyframes fadeInOutInstruction {
+            0% { opacity: 0; }
+            20% { opacity: 0.7; }
+            80% { opacity: 0.7; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="emoji-bg" style="position:fixed; left:0; top:0; width:100vw; height:100vh; z-index:0; pointer-events:none;"></canvas>
+    <canvas id="emoji-bg" style="position:fixed; left:0; top:0; width:100vw; height:100vh; z-index:2; pointer-events:none;"></canvas>
+    <canvas id="bokeh-bg"></canvas>
+    <div id="hilo-texto">Mi hogar es contigo...</div>
+    <canvas id="love-particles" style="position:fixed; left:0; top:0; width:100vw; height:100vh; z-index:0; pointer-events:none;"></canvas>
+    <div id="map" aria-label="Mapa de Perú mostrando el hilo rojo del destino" role="region"></div>
+    <div id="map-overlay"></div>
+    <div id="hilo-heart" style="display:none; position:absolute; width:32px; height:32px; z-index:5; pointer-events:none;" aria-hidden="true">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Corazón animado sobre el hilo rojo">
+            <path d="M16 29s-9.5-7.2-12.5-12C1.2 13.2 2.5 8.5 7 8.5c2.3 0 4.1 1.7 5 3.1C13.9 10.2 15.7 8.5 18 8.5c4.5 0 5.8 4.7 3.5 8.5C25.5 21.8 16 29 16 29z" fill="#ff4d5a"/>
+        </svg>
+    </div>
+    <div id="instruction-tier" aria-live="polite">Haz clic en nuestro hilo rojo del destino...</div>
+    <div id="letter-scene">
+        <div id="letter-content" role="main" aria-label="Carta de amor para Kumyko">
+            <h1 class="anniversary-graphic">2</h1>
+            <p class="anniversary-sub">Nuestros primeros meses</p>
+            <div class="letter-text">
+                <p>
+                    Querida Kumyko:<br>
+                    Dicen que el hilo rojo del destino puede estirarse, contraerse o enredarse,<br>
+                    pero nunca romperse. No importa la distancia: está ahí, guiando a las almas destinadas a encontrarse.
+                </p>
+                <p>
+                    Hoy nos separan 1,100 kilómetros entre Tacna y Lima,<br>
+                    pero cada día esa línea roja se siente más corta.<br>
+                    Gracias por estos dos meses increíbles.<br>
+                    Gracias por tus mensajes, por tus risas<br>
+                    y por hacer que esperar volver a verte sea lo más bonito.<br>
+                    Puede que lo nuestro halla empezado rapido, pero siento que encajamos perfecto, que somos el uno para el otro.<br>
+                    Ya falta poco para volver a vernos,<br>
+                    y no dejo de pensar en los momentos tan lindos<br>
+                    que vamos a vivir cuando, por fin, pueda estar a tu lado.
+                </p>
+                <p style="margin-top: 2.2em; font-size: 1.18rem; font-style: italic; color: #e63946;">
+                    Te quiero mucho.
+                </p>
+            </div>
+            <p class="letter-signature">Con todo mi amor, Sebastian0927 ❤️<br>01 de Marzo, 2026</p>
+        </div>
+    </div>
+    <script>
+        // --- EMOJIS FLOTANTES EN EL FONDO AZUL ---
+        function startEmojiFloaters() {
+            const canvas = document.getElementById('emoji-bg');
+            const ctx = canvas.getContext('2d');
+            let W = window.innerWidth, H = window.innerHeight;
+            canvas.width = W;
+            canvas.height = H;
+            const emojiList = ['🐥','🐷','❤️'];
+            const floaters = [];
+            for (let i = 0; i < 18; i++) {
+                const emoji = emojiList[Math.floor(Math.random() * emojiList.length)];
+                floaters.push({
+                    emoji,
+                    x: Math.random() * W,
+                    y: H + Math.random() * 120,
+                    size: 32 + Math.random() * 32,
+                    speed: 0.4 + Math.random() * 0.7,
+                    drift: (Math.random() - 0.5) * 0.7,
+                    alpha: 0.7 + Math.random() * 0.3
+                });
+            }
+            function animate() {
+                ctx.clearRect(0, 0, W, H);
+                for (let f of floaters) {
+                    ctx.save();
+                    ctx.globalAlpha = f.alpha;
+                    ctx.font = `${f.size}px serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(f.emoji, f.x, f.y);
+                    ctx.restore();
+                    f.y -= f.speed;
+                    f.x += f.drift;
+                    if (f.y < -40) {
+                        f.y = H + 40;
+                        f.x = Math.random() * W;
+                        f.emoji = emojiList[Math.floor(Math.random() * emojiList.length)];
+                        f.size = 32 + Math.random() * 32;
+                        f.speed = 0.4 + Math.random() * 0.7;
+                        f.drift = (Math.random() - 0.5) * 0.7;
+                        f.alpha = 0.7 + Math.random() * 0.3;
+                    }
+                }
+                requestAnimationFrame(animate);
+            }
+            animate();
+            window.addEventListener('resize', () => {
+                W = window.innerWidth; H = window.innerHeight;
+                canvas.width = W; canvas.height = H;
+            });
+        }
+        startEmojiFloaters();
+
+        // --- BOKEH FONDO ---
+        function drawBokeh() {
+            const canvas = document.getElementById('bokeh-bg');
+            const ctx = canvas.getContext('2d');
+            let W = window.innerWidth, H = window.innerHeight;
+            canvas.width = W;
+            canvas.height = H;
+            const circles = [];
+            for (let i = 0; i < 16; i++) {
+                circles.push({
+                    x: Math.random() * W,
+                    y: Math.random() * H,
+                    r: 60 + Math.random() * 90,
+                    color: Math.random() > 0.5 ? 'rgba(182,208,247,0.13)' : 'rgba(110,168,230,0.10)',
+                    blur: 12 + Math.random() * 18
+                });
+            }
+            function render() {
+                ctx.clearRect(0, 0, W, H);
+                for (let c of circles) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(c.x, c.y, c.r, 0, 2 * Math.PI);
+                    ctx.fillStyle = c.color;
+                    ctx.shadowColor = c.color;
+                    ctx.shadowBlur = c.blur;
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+            render();
+            window.addEventListener('resize', () => {
+                W = window.innerWidth; H = window.innerHeight;
+                canvas.width = W; canvas.height = H;
+                render();
+            });
+        }
+        drawBokeh();
+
+        // --- PARTÍCULAS ROMÁNTICAS ---
+        function drawHeart(ctx, x, y, size, color) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(x, y + size / 4);
+            ctx.bezierCurveTo(x, y, x - size / 2, y, x - size / 2, y + size / 4);
+            ctx.bezierCurveTo(x - size / 2, y + size / 2, x, y + size / 1.2, x, y + size);
+            ctx.bezierCurveTo(x, y + size / 1.2, x + size / 2, y + size / 2, x + size / 2, y + size / 4);
+            ctx.bezierCurveTo(x + size / 2, y, x, y, x, y + size / 4);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.globalAlpha = 0.7;
+            ctx.fill();
+            ctx.restore();
+        }
+        function startLoveParticles() {
+            const canvas = document.getElementById('love-particles');
+            const ctx = canvas.getContext('2d');
+            let W = window.innerWidth, H = window.innerHeight;
+            canvas.width = W;
+            canvas.height = H;
+            const hearts = [];
+            for (let i = 0; i < 22; i++) {
+                const blueChance = Math.random();
+                hearts.push({
+                    x: Math.random() * W,
+                    y: Math.random() * H,
+                    size: 7 + Math.random() * 11,
+                    speed: 0.3 + Math.random() * 0.7,
+                    drift: (Math.random() - 0.5) * 0.4,
+                    color: blueChance < 0.25 ? (blueChance < 0.12 ? '#b6d0f7' : '#6ea8e6') : (Math.random() > 0.5 ? '#ff4d5a' : '#e63946'),
+                    alpha: 0.22 + Math.random() * 0.22
+                });
+            }
+            function animate() {
+                ctx.clearRect(0, 0, W, H);
+                for (let h of hearts) {
+                    ctx.globalAlpha = h.alpha;
+                    drawHeart(ctx, h.x, h.y, h.size, h.color);
+                    ctx.globalAlpha = 1.0;
+                    h.y -= h.speed;
+                    h.x += h.drift;
+                    if (h.y + h.size < 0) {
+                        h.y = H + h.size;
+                        h.x = Math.random() * W;
+                    }
+                }
+                requestAnimationFrame(animate);
+            }
+            animate();
+            window.addEventListener('resize', () => {
+                W = window.innerWidth; H = window.innerHeight;
+                canvas.width = W; canvas.height = H;
+            });
+        }
+        startLoveParticles();
+
+        // --- CONFIGURACIÓN MAPA ---
+        // El token se carga desde config.js (no subas config.js a git)
+        const coords = {
+            tacna: [-70.2519, -18.0056],
+            lima: [-77.0428, -12.0464]
+        };
+        mapboxgl.accessToken = MAPBOX_TOKEN;
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/dark-v11',
+            center: coords.tacna,
+            zoom: 6.5,
+            pitch: 45,
+            bearing: 0,
+            antialias: true
+        });
+        map.scrollZoom.disable();
+        map.boxZoom.disable();
+        map.dragRotate.disable();
+        map.doubleClickZoom.disable();
+        map.on('load', () => {
+            const hiloTexto = document.getElementById('hilo-texto');
+            hiloTexto.style.opacity = '1';
+            const instruction = document.getElementById('instruction-tier');
+            instruction.style.opacity = '1';
+            instruction.style.pointerEvents = 'auto';
+
+            function showTooltip(el, message) {
+                let tooltip = document.createElement('div');
+                tooltip.className = 'marker-tooltip';
+                tooltip.innerText = message;
+                tooltip.style.position = 'absolute';
+                tooltip.style.background = 'rgba(253,253,252,0.97)';
+                tooltip.style.color = '#e63946';
+                tooltip.style.fontFamily = 'Montserrat, sans-serif';
+                tooltip.style.fontSize = '1rem';
+                tooltip.style.padding = '6px 16px';
+                tooltip.style.borderRadius = '18px';
+                tooltip.style.boxShadow = '0 2px 12px rgba(0,0,0,0.13)';
+                tooltip.style.pointerEvents = 'none';
+                tooltip.style.zIndex = 20;
+                document.body.appendChild(tooltip);
+                el._tooltip = tooltip;
+            }
+            function moveTooltip(el, event) {
+                if (el._tooltip) {
+                    el._tooltip.style.left = (event.originalEvent.clientX + 12) + 'px';
+                    el._tooltip.style.top = (event.originalEvent.clientY - 18) + 'px';
+                }
+            }
+            function hideTooltip(el) {
+                if (el._tooltip) {
+                    document.body.removeChild(el._tooltip);
+                    el._tooltip = null;
+                }
+            }
+            const addMarker = (coord, id, delay = 0) => {
+                const el = document.createElement('div');
+                el.className = `marker-pulse marker-${id}`;
+                el.style.opacity = '0';
+                el.title = id;
+                setTimeout(() => {
+                    el.style.opacity = '1';
+                }, delay);
+                const marker = new mapboxgl.Marker(el).setLngLat(coord).addTo(map);
+                el.addEventListener('mouseenter', (e) => {
+                    showTooltip(el, markerMessages[id]);
+                });
+                el.addEventListener('mousemove', (e) => {
+                    moveTooltip(el, { originalEvent: e });
+                });
+                el.addEventListener('mouseleave', (e) => {
+                    hideTooltip(el);
+                });
+            };
+
+            function getBezierPoint(t, p0, p1, p2) {
+                const x = (1 - t) * (1 - t) * p0[0] + 2 * (1 - t) * t * p1[0] + t * t * p2[0];
+                const y = (1 - t) * (1 - t) * p0[1] + 2 * (1 - t) * t * p1[1] + t * t * p2[1];
+                return [x, y];
+            }
+            const start = coords.tacna;
+            const end = coords.lima;
+            const control = [
+                (start[0] + end[0]) / 2,
+                Math.max(start[1], end[1]) + 3
+            ];
+            const hiloRojoGeoJSON = {
+                type: "Feature",
+                properties: {},
+                geometry: {
+                    type: "LineString",
+                    coordinates: [start]
+                }
+            };
+            map.addSource('hilo-rojo-source', {
+                type: 'geojson',
+                data: hiloRojoGeoJSON
+            });
+            map.addLayer({
+                'id': 'hilo-rojo-line',
+                'type': 'line',
+                'source': 'hilo-rojo-source',
+                'layout': { 'line-cap': 'round', 'line-join': 'round' },
+                'paint': {
+                    'line-color': '#e63946',
+                    'line-width': 3,
+                    'line-blur': 1
+                }
+            });
+            const steps = 260;
+            let currentStep = 0;
+            const heart = document.getElementById('hilo-heart');
+            function lngLatToScreen(lng, lat) {
+                const p = map.project([lng, lat]);
+                return p;
+            }
+            function animateLine() {
+                if (currentStep === 0) {
+                    heart.style.display = 'block';
+                    hiloTexto.style.opacity = '1';
+                }
+                if (currentStep < steps) {
+                    const t = currentStep / steps;
+                    const [lng, lat] = getBezierPoint(t, start, control, end);
+                    const screen = lngLatToScreen(lng, lat);
+                    heart.style.left = (screen.x - 16) + 'px';
+                    heart.style.top = (screen.y - 16) + 'px';
+                    heart.style.transform = 'scale(1.2)';
+                    heart.style.opacity = '0.85';
+                    const source = map.getSource('hilo-rojo-source');
+                    const data = source._data || hiloRojoGeoJSON;
+                    data.geometry.coordinates.push([lng, lat]);
+                    source.setData(data);
+                    currentStep++;
+                    setTimeout(animateLine, 18);
+                } else {
+                    heart.style.display = 'none';
+                    hiloTexto.style.opacity = '0';
+                    const hiloLayer = document.querySelector('canvas.mapboxgl-canvas');
+                    if (hiloLayer) hiloLayer.classList.add('hilo-brillante');
+                    map.setPaintProperty('hilo-rojo-line', 'line-width', 6);
+                    map.setPaintProperty('hilo-rojo-line', 'line-color', '#ff4d5a');
+                    map.on('click', 'hilo-rojo-line', triggerTransition);
+                    map.on('mouseenter', 'hilo-rojo-line', () => { map.getCanvas().style.cursor = 'pointer'; });
+                    map.on('mouseleave', 'hilo-rojo-line', () => { map.getCanvas().style.cursor = ''; });
+                }
+            }
+            setTimeout(animateLine, 2000); 
+        });
+        function triggerTransition() {
+            const instruction = document.getElementById('instruction-tier');
+            instruction.style.opacity = '0';
+            instruction.style.pointerEvents = 'none';
+            setTimeout(() => {
+                instruction.style.display = 'none';
+            }, 2200);
+            map.flyTo({
+                center: [ (coords.tacna[0] + coords.lima[0]) / 2, (coords.tacna[1] + coords.lima[1]) / 2 ],
+                zoom: 5.5,
+                pitch: 0,
+                bearing: 0,
+                essential: true,
+                duration: 2500
+            });
+            setTimeout(() => {
+                document.body.classList.add('illuminated');
+                document.getElementById('map').classList.add('fade-out');
+            }, 1000);
+            setTimeout(() => {
+                document.getElementById('letter-scene').classList.add('fade-in');
+            }, 2500);
+        }
+    </script>
+    <script src="config.js"></script>
+</body>
+</html>
