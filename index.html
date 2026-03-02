@@ -394,178 +394,179 @@
         }
         startLoveParticles();
 
- // --- CONFIGURACIÓN MAPA ---
-    // El token se carga desde config.js (no subas config.js a git)
-    const coords = {
-        tacna: [-70.2519, -18.0056],
-        lima: [-77.0428, -12.0464]
-    };
-    mapboxgl.accessToken = MAPBOX_TOKEN;
-    const map = new mapboxgl.Map({
-        container: 'map',
-        style: 'mapbox://styles/mapbox/dark-v11',
-        center: coords.tacna,
-        zoom: 6.5,
-        pitch: 45,
-        bearing: 0,
-        antialias: true
-    });
-    map.scrollZoom.disable();
-    map.boxZoom.disable();
-    map.dragRotate.disable();
-    map.doubleClickZoom.disable();
-    map.on('load', () => {
-        const hiloTexto = document.getElementById('hilo-texto');
-        hiloTexto.style.opacity = '1';
-        const instruction = document.getElementById('instruction-tier');
-        instruction.style.opacity = '1';
-        instruction.style.pointerEvents = 'auto';
-
-        function showTooltip(el, message) {
-            let tooltip = document.createElement('div');
-            tooltip.className = 'marker-tooltip';
-            tooltip.innerText = message;
-            tooltip.style.position = 'absolute';
-            tooltip.style.background = 'rgba(253,253,252,0.97)';
-            tooltip.style.color = '#e63946';
-            tooltip.style.fontFamily = 'Montserrat, sans-serif';
-            tooltip.style.fontSize = '1rem';
-            tooltip.style.padding = '6px 16px';
-            tooltip.style.borderRadius = '18px';
-            tooltip.style.boxShadow = '0 2px 12px rgba(0,0,0,0.13)';
-            tooltip.style.pointerEvents = 'none';
-            tooltip.style.zIndex = 20;
-            document.body.appendChild(tooltip);
-            el._tooltip = tooltip;
-        }
-        function moveTooltip(el, event) {
-            if (el._tooltip) {
-                el._tooltip.style.left = (event.originalEvent.clientX + 12) + 'px';
-                el._tooltip.style.top = (event.originalEvent.clientY - 18) + 'px';
-            }
-        }
-        function hideTooltip(el) {
-            if (el._tooltip) {
-                document.body.removeChild(el._tooltip);
-                el._tooltip = null;
-            }
-        }
-        const addMarker = (coord, id, delay = 0) => {
-            const el = document.createElement('div');
-            el.className = `marker-pulse marker-${id}`;
-            el.style.opacity = '0';
-            el.title = id;
-            setTimeout(() => {
-                el.style.opacity = '1';
-            }, delay);
-            const marker = new mapboxgl.Marker(el).setLngLat(coord).addTo(map);
-            el.addEventListener('mouseenter', (e) => {
-                showTooltip(el, markerMessages[id]);
-            });
-            el.addEventListener('mousemove', (e) => {
-                moveTooltip(el, { originalEvent: e });
-            });
-            el.addEventListener('mouseleave', (e) => {
-                hideTooltip(el);
-            });
+        // --- CONFIGURACIÓN MAPA ---
+        const MAPBOX_TOKEN = 'pk.eyJ1IjoiYmFzbmVteSIsImEiOiJjbW03MW80YWUwMmNqMnFwcjl1a2E1ZXN1In0.edkYjjcmV65Px9X5TEbJGw'; 
+        const coords = {
+            tacna: [-70.2519, -18.0056],
+            lima: [-77.0428, -12.0464]
         };
-
-        function getBezierPoint(t, p0, p1, p2) {
-            const x = (1 - t) * (1 - t) * p0[0] + 2 * (1 - t) * t * p1[0] + t * t * p2[0];
-            const y = (1 - t) * (1 - t) * p0[1] + 2 * (1 - t) * t * p1[1] + t * t * p2[1];
-            return [x, y];
-        }
-        const start = coords.tacna;
-        const end = coords.lima;
-        const control = [
-            (start[0] + end[0]) / 2,
-            Math.max(start[1], end[1]) + 3
-        ];
-        const hiloRojoGeoJSON = {
-            type: "Feature",
-            properties: {},
-            geometry: {
-                type: "LineString",
-                coordinates: [start]
-            }
-        };
-        map.addSource('hilo-rojo-source', {
-            type: 'geojson',
-            data: hiloRojoGeoJSON
-        });
-        map.addLayer({
-            'id': 'hilo-rojo-line',
-            'type': 'line',
-            'source': 'hilo-rojo-source',
-            'layout': { 'line-cap': 'round', 'line-join': 'round' },
-            'paint': {
-                'line-color': '#e63946',
-                'line-width': 3,
-                'line-blur': 1
-            }
-        });
-        const steps = 260;
-        let currentStep = 0;
-        const heart = document.getElementById('hilo-heart');
-        function lngLatToScreen(lng, lat) {
-            const p = map.project([lng, lat]);
-            return p;
-        }
-        function animateLine() {
-            if (currentStep === 0) {
-                heart.style.display = 'block';
-                hiloTexto.style.opacity = '1';
-            }
-            if (currentStep < steps) {
-                const t = currentStep / steps;
-                const [lng, lat] = getBezierPoint(t, start, control, end);
-                const screen = lngLatToScreen(lng, lat);
-                heart.style.left = (screen.x - 16) + 'px';
-                heart.style.top = (screen.y - 16) + 'px';
-                heart.style.transform = 'scale(1.2)';
-                heart.style.opacity = '0.85';
-                const source = map.getSource('hilo-rojo-source');
-                const data = source._data || hiloRojoGeoJSON;
-                data.geometry.coordinates.push([lng, lat]);
-                source.setData(data);
-                currentStep++;
-                setTimeout(animateLine, 18);
-            } else {
-                heart.style.display = 'none';
-                hiloTexto.style.opacity = '0';
-                const hiloLayer = document.querySelector('canvas.mapboxgl-canvas');
-                if (hiloLayer) hiloLayer.classList.add('hilo-brillante');
-                map.setPaintProperty('hilo-rojo-line', 'line-width', 6);
-                map.setPaintProperty('hilo-rojo-line', 'line-color', '#ff4d5a');
-                map.on('click', 'hilo-rojo-line', triggerTransition);
-                map.on('mouseenter', 'hilo-rojo-line', () => { map.getCanvas().style.cursor = 'pointer'; });
-                map.on('mouseleave', 'hilo-rojo-line', () => { map.getCanvas().style.cursor = ''; });
-            }
-        }
-        setTimeout(animateLine, 2000); 
-    });
-    function triggerTransition() {
-        const instruction = document.getElementById('instruction-tier');
-        instruction.style.opacity = '0';
-        instruction.style.pointerEvents = 'none';
-        setTimeout(() => {
-            instruction.style.display = 'none';
-        }, 2200);
-        map.flyTo({
-            center: [ (coords.tacna[0] + coords.lima[0]) / 2, (coords.tacna[1] + coords.lima[1]) / 2 ],
-            zoom: 5.5,
-            pitch: 0,
+        mapboxgl.accessToken = MAPBOX_TOKEN;
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/dark-v11',
+            center: coords.tacna,
+            zoom: 6.5,
+            pitch: 45,
             bearing: 0,
-            essential: true,
-            duration: 2500
+            antialias: true
         });
-        setTimeout(() => {
-            document.body.classList.add('illuminated');
-            document.getElementById('map').classList.add('fade-out');
-        }, 1000);
-        setTimeout(() => {
-            document.getElementById('letter-scene').classList.add('fade-in');
-        }, 2500);
-    }
-</script>
-<script src="config.js"></script>
+        map.scrollZoom.disable();
+        map.boxZoom.disable();
+        map.dragRotate.disable();
+        map.doubleClickZoom.disable();
+        map.on('load', () => {
+            const hiloTexto = document.getElementById('hilo-texto');
+            hiloTexto.style.opacity = '1';
+            const instruction = document.getElementById('instruction-tier');
+            instruction.style.opacity = '1';
+            instruction.style.pointerEvents = 'auto';
+
+            function showTooltip(el, message) {
+                let tooltip = document.createElement('div');
+                tooltip.className = 'marker-tooltip';
+                tooltip.innerText = message;
+                tooltip.style.position = 'absolute';
+                tooltip.style.background = 'rgba(253,253,252,0.97)';
+                tooltip.style.color = '#e63946';
+                tooltip.style.fontFamily = 'Montserrat, sans-serif';
+                tooltip.style.fontSize = '1rem';
+                tooltip.style.padding = '6px 16px';
+                tooltip.style.borderRadius = '18px';
+                tooltip.style.boxShadow = '0 2px 12px rgba(0,0,0,0.13)';
+                tooltip.style.pointerEvents = 'none';
+                tooltip.style.zIndex = 20;
+                document.body.appendChild(tooltip);
+                el._tooltip = tooltip;
+            }
+            function moveTooltip(el, event) {
+                if (el._tooltip) {
+                    el._tooltip.style.left = (event.originalEvent.clientX + 12) + 'px';
+                    el._tooltip.style.top = (event.originalEvent.clientY - 18) + 'px';
+                }
+            }
+            function hideTooltip(el) {
+                if (el._tooltip) {
+                    document.body.removeChild(el._tooltip);
+                    el._tooltip = null;
+                }
+            }
+            const addMarker = (coord, id, delay = 0) => {
+                const el = document.createElement('div');
+                el.className = `marker-pulse marker-${id}`;
+                el.style.opacity = '0';
+                el.title = id;
+                setTimeout(() => {
+                    el.style.opacity = '1';
+                }, delay);
+                const marker = new mapboxgl.Marker(el).setLngLat(coord).addTo(map);
+                el.addEventListener('mouseenter', (e) => {
+                    showTooltip(el, markerMessages[id]);
+                });
+                el.addEventListener('mousemove', (e) => {
+                    moveTooltip(el, { originalEvent: e });
+                });
+                el.addEventListener('mouseleave', (e) => {
+                    hideTooltip(el);
+                });
+            };
+
+            function getBezierPoint(t, p0, p1, p2) {
+                const x = (1 - t) * (1 - t) * p0[0] + 2 * (1 - t) * t * p1[0] + t * t * p2[0];
+                const y = (1 - t) * (1 - t) * p0[1] + 2 * (1 - t) * t * p1[1] + t * t * p2[1];
+                return [x, y];
+            }
+            const start = coords.tacna;
+            const end = coords.lima;
+            const control = [
+                (start[0] + end[0]) / 2,
+                Math.max(start[1], end[1]) + 3
+            ];
+            const hiloRojoGeoJSON = {
+                type: "Feature",
+                properties: {},
+                geometry: {
+                    type: "LineString",
+                    coordinates: [start]
+                }
+            };
+            map.addSource('hilo-rojo-source', {
+                type: 'geojson',
+                data: hiloRojoGeoJSON
+            });
+            map.addLayer({
+                'id': 'hilo-rojo-line',
+                'type': 'line',
+                'source': 'hilo-rojo-source',
+                'layout': { 'line-cap': 'round', 'line-join': 'round' },
+                'paint': {
+                    'line-color': '#e63946',
+                    'line-width': 3,
+                    'line-blur': 1
+                }
+            });
+            const steps = 260;
+            let currentStep = 0;
+            const heart = document.getElementById('hilo-heart');
+            function lngLatToScreen(lng, lat) {
+                const p = map.project([lng, lat]);
+                return p;
+            }
+            function animateLine() {
+                if (currentStep === 0) {
+                    heart.style.display = 'block';
+                    hiloTexto.style.opacity = '1';
+                }
+                if (currentStep < steps) {
+                    const t = currentStep / steps;
+                    const [lng, lat] = getBezierPoint(t, start, control, end);
+                    const screen = lngLatToScreen(lng, lat);
+                    heart.style.left = (screen.x - 16) + 'px';
+                    heart.style.top = (screen.y - 16) + 'px';
+                    heart.style.transform = 'scale(1.2)';
+                    heart.style.opacity = '0.85';
+                    const source = map.getSource('hilo-rojo-source');
+                    const data = source._data || hiloRojoGeoJSON;
+                    data.geometry.coordinates.push([lng, lat]);
+                    source.setData(data);
+                    currentStep++;
+                    setTimeout(animateLine, 18);
+                } else {
+                    heart.style.display = 'none';
+                    hiloTexto.style.opacity = '0';
+                    const hiloLayer = document.querySelector('canvas.mapboxgl-canvas');
+                    if (hiloLayer) hiloLayer.classList.add('hilo-brillante');
+                    map.setPaintProperty('hilo-rojo-line', 'line-width', 6);
+                    map.setPaintProperty('hilo-rojo-line', 'line-color', '#ff4d5a');
+                    map.on('click', 'hilo-rojo-line', triggerTransition);
+                    map.on('mouseenter', 'hilo-rojo-line', () => { map.getCanvas().style.cursor = 'pointer'; });
+                    map.on('mouseleave', 'hilo-rojo-line', () => { map.getCanvas().style.cursor = ''; });
+                }
+            }
+            setTimeout(animateLine, 2000); 
+        });
+        function triggerTransition() {
+            const instruction = document.getElementById('instruction-tier');
+            instruction.style.opacity = '0';
+            instruction.style.pointerEvents = 'none';
+            setTimeout(() => {
+                instruction.style.display = 'none';
+            }, 2200);
+            map.flyTo({
+                center: [ (coords.tacna[0] + coords.lima[0]) / 2, (coords.tacna[1] + coords.lima[1]) / 2 ],
+                zoom: 5.5,
+                pitch: 0,
+                bearing: 0,
+                essential: true,
+                duration: 2500
+            });
+            setTimeout(() => {
+                document.body.classList.add('illuminated');
+                document.getElementById('map').classList.add('fade-out');
+            }, 1000);
+            setTimeout(() => {
+                document.getElementById('letter-scene').classList.add('fade-in');
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
