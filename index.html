@@ -118,14 +118,24 @@
             100% { transform: scale(1) translateY(0); opacity: 1; }
         }
         #instruction-tier {
-            position: absolute; bottom: 8vh; width: 100%;
+            position: fixed;
+            left: 50%;
+            bottom: 5vh;
+            transform: translateX(-50%);
+            width: auto;
+            max-width: 90vw;
+            padding: 18px 36px;
             text-align: center;
             color: #fff;
             font-family: 'Playfair Display', serif;
             font-style: italic;
-            font-size: 1.25rem;
-            letter-spacing: 1px;
-            z-index: 20;
+            font-size: 2.2rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-shadow: 0 4px 24px #e63946cc, 0 1.5px 8px #0008;
+            background: rgba(30,30,40,0.32);
+            border-radius: 24px;
+            z-index: 1001;
             pointer-events: auto;
             opacity: 0;
             animation: instructionFadeIn 1.2s cubic-bezier(.68,-0.55,.27,1.55) 2.2s forwards;
@@ -201,14 +211,62 @@
             100% { opacity: 0; }
         }
     </style>
+    
 </head>
-
-    <audio id="bg-music" src="home_bts.m4a" autoplay loop controls style="display:none"></audio>
 <body>
+        <button id="play-music-btn" style="
+            position:fixed;
+            left:50%;
+            top:50%;
+            transform:translate(-50%,-50%);
+            z-index:2000;
+            padding:22px 44px;
+            font-size:1.45rem;
+            background:linear-gradient(90deg,#ff4d5a 0%,#e63946 100%);
+            color:#fff;
+            border:none;
+            border-radius:32px;
+            box-shadow:0 4px 32px #e6394680,0 1.5px 8px #fff3;
+            cursor:pointer;
+            font-family:'Playfair Display',serif;
+            letter-spacing:2px;
+            font-weight:700;
+            transition:transform 0.18s,box-shadow 0.18s;
+            animation:pulseBtn 1.2s infinite alternate;
+            display:block;">❤️ Haz clic para escuchar nuestra canción ❤️</button>
+        <style>
+            @keyframes pulseBtn {
+                0% { box-shadow:0 0 0 0 #e6394640,0 1.5px 8px #fff3; transform:translate(-50%,-50%) scale(1); }
+                100% { box-shadow:0 0 32px 8px #ff4d5a80,0 1.5px 8px #fff3; transform:translate(-50%,-50%) scale(1.07); }
+            }
+            #play-music-btn:active {
+                transform:translate(-50%,-50%) scale(0.97);
+            }
+        </style>
+    <audio id="bg-music" src="BTS_Telephaty.mp3" autoplay loop controls></audio>
     <canvas id="emoji-bg" style="position:fixed; left:0; top:0; width:100vw; height:100vh; z-index:0; pointer-events:none;"></canvas>
     <canvas id="emoji-bg" style="position:fixed; left:0; top:0; width:100vw; height:100vh; z-index:2; pointer-events:none;"></canvas>
     <canvas id="bokeh-bg"></canvas>
     <div id="hilo-texto">Mi hogar es contigo...</div>
+        <script>
+            // Botón para activar la música desde 2:27
+            const playBtn = document.getElementById('play-music-btn');
+            const audio = document.getElementById('bg-music');
+            playBtn.addEventListener('click', function() {
+                audio.currentTime = 147;
+                audio.play();
+                playBtn.style.display = 'none';
+            });
+        </script>
+        <script>
+            // Iniciar la canción en el minuto 2:27 (147 segundos)
+            window.addEventListener('DOMContentLoaded', function() {
+                var audio = document.getElementById('bg-music');
+                audio.currentTime = 147;
+                // Algunos navegadores requieren play() después de establecer currentTime
+                audio.play().catch(()=>{});
+            });
+        </script>
     <canvas id="love-particles" style="position:fixed; left:0; top:0; width:100vw; height:100vh; z-index:0; pointer-events:none;"></canvas>
     <div id="map" aria-label="Mapa de Perú mostrando el hilo rojo del destino" role="region"></div>
     <div id="map-overlay"></div>
@@ -240,7 +298,7 @@
                     que vamos a vivir cuando, por fin, pueda estar a tu lado.
                 </p>
                 <p style="margin-top: 2.2em; font-size: 1.18rem; font-style: italic; color: #e63946;">
-                    Te quiero mucho.
+                    Te amo mucho mi kumymorcita❤️.
                 </p>
             </div>
             <p class="letter-signature">Con todo mi amor, Sebastian0927 ❤️<br>01 de Marzo, 2026</p>
@@ -572,3 +630,4 @@
     </script>
 </body>
 </html>
+ checa
